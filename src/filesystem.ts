@@ -1,11 +1,13 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { assertSafeRelativePath, checkLimit, MAX_INPUT_BYTES, SafeInputError } from './safety.js';
 
 // Node does not expose openat. A fixed, isolated Python stdlib helper retains
 // directory descriptors instead of checking a pathname and reopening it later.
 const HELPER = String.raw`
-import base64, errno, json, os, selectors, signal, stat, subprocess, sys, tempfile, time
+import base64, errno, json, os, selectors, signal, stat, subprocess, sys, time
 class Rejected(Exception):
  def __init__(self, code): self.code=code
 def reject(code): raise Rejected(code)
@@ -155,16 +157,30 @@ def snapshot(root,destination):
    except FileNotFoundError: continue
    try: os.mkdir(os.path.join(gd,name),0o700); copy(fd,os.path.join(gd,name),1,True)
    finally: os.close(fd)
+  try: info=os.open('info',DF,dir_fd=g)
+  except FileNotFoundError: info=None
+  if info is not None:
+   try:
+    for forbidden in ('grafts','sparse-checkout'):
+     try: os.stat(forbidden,dir_fd=info,follow_symlinks=False); reject('GIT_FAILED')
+     except FileNotFoundError: pass
+    os.mkdir(os.path.join(gd,'info'),0o700)
+    for name in ('exclude','attributes'):
+     try: data=base64.b64decode(read(info,{'path':name,'limit':4194304}))
+     except FileNotFoundError: continue
+     total+=len(data)
+     if total>256*1024*1024: reject('SIZE')
+     with open(os.path.join(gd,'info',name),'xb') as output: output.write(data)
+   finally: os.close(info)
   with open(os.path.join(gd,'config'),'x') as config: config.write('[core]\nrepositoryformatversion = 0\nbare = false\nfilemode = true\n')
  finally: os.close(g)
 def command(root,q):
  if q['op']=='git':
-  with tempfile.TemporaryDirectory(prefix='zof-git-') as workspace:
-   snapshot(root,workspace)
-   os.chdir(workspace)
-   result=git_command(q)
-   if q['args']==['rev-parse','--show-toplevel']: return base64.b64encode((q['root']+'\n').encode()).decode('ascii')
-   return result
+  snapshot(root,q['snapshot'])
+  os.chdir(q['snapshot'])
+  result=git_command(q)
+  if q['args']==['rev-parse','--show-toplevel']: return base64.b64encode((q['root']+'\n').encode()).decode('ascii')
+  return result
  os.fchdir(root)
  p=subprocess.Popen(q['args'],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,env={'PATH':os.environ.get('PATH','/usr/bin:/bin')})
  try: return p.wait(timeout=q['timeoutMs']/1000)
@@ -215,11 +231,16 @@ const pending: Array<() => void> = [];
 async function run(root: string, request: Record<string, unknown>, timeoutMs = 30000, signal?: AbortSignal): Promise<unknown> {
  if (process.platform !== 'linux' && process.platform !== 'darwin') throw new SafeInputError('UNSUPPORTED_PLATFORM', 'Secure filesystem access requires Linux or macOS with Python 3.10 or later.');
  if (typeof root !== 'string' || root.length > 8192 || root.includes('\0')) throw new SafeInputError('UNSAFE_PATH', 'Invalid workspace root.');
- const input = JSON.stringify({ ...request, root: path.resolve(root) });
+ let input = JSON.stringify({ ...request, root: path.resolve(root) });
  if (Buffer.byteLength(input) > 8 * 1024 * 1024) throw new SafeInputError('SIZE', 'Input exceeds maximum size.');
- if (active >= 4) { if (pending.length >= 128) throw new SafeInputError('BUSY', 'Secure filesystem request limit reached.'); await new Promise<void>(resolve => pending.push(resolve)); }
- active++;
+ if (active >= 4) { if (pending.length >= 16) throw new SafeInputError('BUSY', 'Secure filesystem request limit reached.'); await new Promise<void>(resolve => pending.push(resolve)); }
+ else active++;
+ let snapshot: string | undefined;
  try {
+  if (request.op === 'git') {
+   snapshot = await mkdtemp(path.join(tmpdir(), 'zof-git-'));
+   input = JSON.stringify({ ...request, root: path.resolve(root), snapshot });
+  }
   if (signal?.aborted) throw new SafeInputError('CANCELLED', 'Operation cancelled.');
   return await new Promise((resolve, reject) => {
    const child = spawn('python3', ['-I', '-S', '-c', HELPER], { cwd: '/', env: { PATH: process.env.PATH ?? '/usr/bin:/bin' }, stdio: ['pipe', 'pipe', 'ignore'], detached: true });
@@ -246,7 +267,11 @@ async function run(root: string, request: Record<string, unknown>, timeoutMs = 3
    });
    child.stdin.end(input);
   });
- } finally { active--; pending.shift()?.(); }
+ } finally {
+  try { if(snapshot)await rm(snapshot,{recursive:true,force:true,maxRetries:2,retryDelay:100}); }
+  catch { throw new SafeInputError('CLEANUP_FAILED','Secure temporary workspace cleanup failed.'); }
+  finally { const next=pending.shift(); if(next)next(); else active--; }
+ }
 }
 
 export async function anchoredReadFile(root: string, relativePath: string, maxBytes = MAX_INPUT_BYTES): Promise<Buffer> {
