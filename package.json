@@ -1,0 +1,61 @@
+{
+  "name": "@zof-ai/evidence-spec",
+  "version": "0.1.0",
+  "description": "Portable bounded verification evidence schema and validator",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./schema.json": "./schemas/evidence-1.0.0.schema.json"
+  },
+  "bin": {
+    "zof-evidence": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "docs",
+    "examples",
+    "schemas"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zof-AI/zof-evidence-spec.git"
+  },
+  "homepage": "https://github.com/Zof-AI/zof-evidence-spec#readme",
+  "bugs": {
+    "url": "https://github.com/Zof-AI/zof-evidence-spec/issues"
+  },
+  "keywords": [
+    "verification",
+    "testing",
+    "zof"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "node --test tests/*.test.mjs",
+    "check": "npm run build && npm test",
+    "test:package": "node tests/package.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "22.19.11",
+    "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "ajv": "8.20.0"
+  }
+}

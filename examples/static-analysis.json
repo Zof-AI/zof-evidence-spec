@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "example-static-analysis",
+  "createdAt": "2026-10-18T12:00:00Z",
+  "source": {
+    "repository": "example/calculator",
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "tool": {
+    "name": "example-test-runner",
+    "version": "1.0.0"
+  },
+  "type": "static-analysis",
+  "execution": {
+    "status": "completed",
+    "result": "fail"
+  },
+  "findings": [
+    {
+      "id": "public-rule-1",
+      "severity": "high",
+      "message": "Unsafe evaluation of untrusted input detected.",
+      "path": "src/parser.ts",
+      "line": 12
+    }
+  ],
+  "tests": [],
+  "artifacts": [],
+  "extensions": {
+    "org.example.analysis": {
+      "rulesExecuted": 3
+    }
+  }
+}

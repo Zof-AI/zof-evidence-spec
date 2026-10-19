@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "example-partial",
+  "createdAt": "2026-10-18T12:00:00Z",
+  "source": {
+    "repository": "example/calculator",
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "tool": {
+    "name": "example-test-runner",
+    "version": "1.0.0"
+  },
+  "type": "tests",
+  "execution": {
+    "status": "partial",
+    "result": "unknown"
+  },
+  "findings": [],
+  "tests": [
+    {
+      "name": "adds two integers",
+      "status": "passed",
+      "durationMs": 2
+    },
+    {
+      "name": "division behavior",
+      "status": "skipped"
+    }
+  ],
+  "artifacts": []
+}

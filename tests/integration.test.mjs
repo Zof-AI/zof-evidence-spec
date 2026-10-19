@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, writeFile, symlink, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { safeReadFile, safeReadJson } from '../dist/index.js';
+const fixture=async fn=>{const root=await mkdtemp(path.join(tmpdir(),'zof-evidence-test-'));try{await fn(root)}finally{await rm(root,{recursive:true,force:true})}};
+test('bounded file import and JSON parsing',()=>fixture(async root=>{await mkdir(path.join(root,'data'));await writeFile(path.join(root,'data/report.json'),'{"tests":[]}');assert.deepEqual(await safeReadJson(root,'data/report.json'),{tests:[]});}));
+test('traversal, URL, symlink and directory rejected',()=>fixture(async root=>{await writeFile(path.join(root,'safe'),'ok');await symlink(path.join(root,'safe'),path.join(root,'link'));for(const file of ['../outside','https://example.invalid/report','link']) await assert.rejects(safeReadFile(root,file));await mkdir(path.join(root,'folder'));await assert.rejects(safeReadFile(root,'folder'));}));
+test('symlink directory rejected',()=>fixture(async root=>{await mkdir(path.join(root,'folder'));await writeFile(path.join(root,'folder/safe'),'ok');await symlink(path.join(root,'folder'),path.join(root,'linked'));await assert.rejects(safeReadFile(root,'linked/safe'));}));
+test('oversized file rejected before bulk read',()=>fixture(async root=>{await writeFile(path.join(root,'large'),'x'.repeat(65));await assert.rejects(safeReadFile(root,'large',64),e=>e.code==='SIZE');}));
+test('missing file error contains no path',()=>fixture(async root=>{await assert.rejects(safeReadFile(root,'password=private'),e=>!e.message.includes('private'));}));
