@@ -5,10 +5,11 @@ export function redactText(text: string): string {
  return text
   .replace(/-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|$)/g, '[REDACTED]')
   .replace(/\b[a-z][a-z0-9+.-]*:\/\/[^\s<>"']+/gi, '[REDACTED_URL]')
+  .replace(/\/\/[^/\s<>"'][^\s<>"']*/g, '[REDACTED_URL]')
   .replace(/\b(?:gh[pousr]_[A-Za-z0-9_]{10,}|github_pat_[A-Za-z0-9_]{10,}|npm_[A-Za-z0-9]{10,}|sk-[A-Za-z0-9_-]{10,}|AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16})\b/g, '[REDACTED]')
   .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[REDACTED]')
   .replace(/\b(?:Bearer|Basic)\s+[A-Za-z0-9_+/.=-]+/gi, '[REDACTED]')
-  .replace(/\b(?:password|passwd|secret|token|api[_-]?key|authorization|credential|client[_-]?secret)\s*[:=]\s*(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s,;]+)/gi, '[REDACTED]');
+  .replace(/\b(?:password|passwd|secret|token|api[_-]?key|authorization|credential|client[_-]?secret)["']?\s*[:=]\s*(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s,;]+)/gi, '[REDACTED]');
 }
 const sensitiveKey = /(?:password|passwd|secret|token|credential|authorization|api[-_]?key|private[-_]?key|raw[-_]?logs?|^env$|environment[-_]?variables|stdout|stderr)/i;
 export function redact<T>(value: T): T {
