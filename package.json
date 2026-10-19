@@ -1,5 +1,5 @@
 {
-  "name": "@zof-ai/evidence-spec",
+  "name": "@zofai/evidence-spec",
   "version": "0.1.0",
   "description": "Portable bounded verification evidence schema and validator",
   "type": "module",
