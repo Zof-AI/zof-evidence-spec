@@ -2,7 +2,36 @@
 
 A portable, vendor-neutral JSON format for software verification results, with an offline TypeScript validator and CLI. Schema validity describes structure and consistency; it does **not** establish that tests actually ran or authenticate a producer.
 
-Version 0.1.0 is prepared under the Apache-2.0 license. Use the GitHub source installation below; npm registry publication is not claimed.
+
+
+<!-- ZOF_NPM_INSTALL_START -->
+## Install from npm
+
+Use Node.js 22 or 24 and npm. File-based operations require Linux or macOS with Python 3.10 or newer; Windows file operations fail closed. In a new project directory, install the version used by this guide:
+
+```sh
+npm install --ignore-scripts --save-exact @zof-ai/evidence-spec@0.1.1
+npx --no-install zof-evidence --help
+```
+
+The package includes compiled JavaScript, TypeScript declarations and its runtime dependencies. No source build, Zof account or repository upload is required. `--ignore-scripts` disables installation lifecycle scripts; `--no-install` keeps the example commands from downloading another package.
+
+Confirm the public ESM entry point; this prints `function`:
+
+```sh
+node --input-type=module -e "import('@zof-ai/evidence-spec').then(api => console.log(typeof api.validateEvidence))"
+```
+
+Run a packaged example from the same directory:
+
+```sh
+npx --no-install zof-evidence validate passing.json --root node_modules/@zof-ai/evidence-spec/examples
+```
+
+The report has `valid: true`; validation checks the evidence structure, not whether tests actually ran.
+
+Package: [@zof-ai/evidence-spec](https://www.npmjs.com/package/@zof-ai/evidence-spec). The source-checkout instructions and three additional workflows follow.
+<!-- ZOF_NPM_INSTALL_END -->
 
 <!-- ZOF_RELEASE_INSTALL_START -->
 ## Install from GitHub source
@@ -10,7 +39,7 @@ Version 0.1.0 is prepared under the Apache-2.0 license. Use the GitHub source in
 Requires Node.js 22 or 24, npm, and Git. Filesystem operations require Linux or macOS with Python 3.10 or newer; Windows file operations fail closed. Clone this repository and explicitly prepare its reviewed release dependencies:
 
 ```sh
-git clone https://github.com/Zof-AI/zof-evidence-spec.git
+git clone --branch v0.1.1 --depth 1 https://github.com/Zof-AI/zof-evidence-spec.git
 cd zof-evidence-spec
 node scripts/bootstrap.mjs --allow-network
 npm ci --ignore-scripts --prefer-offline
@@ -18,9 +47,8 @@ npm run build
 npm test
 ```
 
-The bootstrap downloads only the exact `v0.1.0` dependency assets from [GitHub Releases](https://github.com/Zof-AI/zof-evidence-spec/releases), as listed in `scripts/release-dependencies.json`, verifies SHA256 and byte size, and adds them to the npm cache. It does not extract archives, run package scripts, collect application data, or send credentials. Downloads require the explicit flag and follow only HTTPS GitHub asset redirects. Installation then fetches ordinary third-party dependencies from npm. Use a writable npm cache; set `npm_config_cache` consistently for both commands if needed. An unavailable asset, changed hash, or oversized response stops installation.
+The bootstrap downloads only the exact versioned dependency assets from [GitHub Releases](https://github.com/Zof-AI/zof-evidence-spec/releases), as listed in `scripts/release-dependencies.json`, verifies SHA256 and byte size, and adds them to the npm cache. It does not extract archives, run package scripts, collect application data, or send credentials. Downloads require the explicit flag and follow only HTTPS GitHub asset redirects. Installation then fetches ordinary third-party dependencies from npm. Use a writable npm cache; set `npm_config_cache` consistently for both commands if needed. An unavailable asset, changed hash, or oversized response stops installation.
 
-GitHub source and release artifacts are the initial distribution channel. These instructions do not claim that `@zof-ai` packages are published on npm or that the VS Code extension is listed in Marketplace.
 <!-- ZOF_RELEASE_INSTALL_END -->
 
 ## Quick start
@@ -53,7 +81,7 @@ console.log(validateEvidence(evidence));
 console.log(serializeEvidence(evidence));
 ```
 
-Use the GitHub source installation above. `npm pack` requires a prior build; source maps and tests are excluded from the package allowlist.
+For development, use the GitHub source installation above. `npm pack` requires a prior build; source maps and tests are excluded from the package allowlist.
 
 `zof-evidence validate <relative-file.json> --root <directory>` exits 0 for valid structure and 1 for invalid input. It never reports verification success based on schema validity.
 
