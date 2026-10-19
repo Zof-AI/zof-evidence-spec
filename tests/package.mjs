@@ -12,7 +12,7 @@ try {
  assert.ok(packed.files.every(f=>!/(?:^|\/)(?:src|tests|orchestration|\.git)(?:\/|$)|\.map$/.test(f.path)));
  await writeFile(path.join(temp,'package.json'),'{"private":true,"type":"module"}');
  run('npm',['install','--ignore-scripts','--no-audit','--no-fund',path.join(temp,packed.filename)],temp);
- run(process.execPath,['--input-type=module','-e',"import {createEvidence,validateEvidence} from '@zofai/evidence-spec'; const e=createEvidence({tool:{name:'consumer',version:'1'},type:'smoke'}); if(!validateEvidence(e).valid)process.exit(1);"],temp);
- run(process.execPath,[path.join(temp,'node_modules/@zofai/evidence-spec/dist/cli.js'),'validate','passing.json','--root',path.join(temp,'node_modules/@zofai/evidence-spec/examples')],temp);
+ run(process.execPath,['--input-type=module','-e',"import {createEvidence,validateEvidence} from '@zof-ai/evidence-spec'; const e=createEvidence({tool:{name:'consumer',version:'1'},type:'smoke'}); if(!validateEvidence(e).valid)process.exit(1);"],temp);
+ run(process.execPath,[path.join(temp,'node_modules/@zof-ai/evidence-spec/dist/cli.js'),'validate','passing.json','--root',path.join(temp,'node_modules/@zof-ai/evidence-spec/examples')],temp);
  console.log(JSON.stringify({package:'passed',entries:packed.files.length,tests:4}));
 } finally {await rm(temp,{recursive:true,force:true});}
