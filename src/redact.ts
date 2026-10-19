@@ -9,9 +9,9 @@ export function redactText(text: string): string {
   .replace(/\b(?:gh[pousr]_[A-Za-z0-9_]{10,}|github_pat_[A-Za-z0-9_]{10,}|npm_[A-Za-z0-9]{10,}|sk-[A-Za-z0-9_-]{10,}|AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16})\b/g, '[REDACTED]')
   .replace(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, '[REDACTED]')
   .replace(/\b(?:Bearer|Basic)\s+[A-Za-z0-9_+/.=-]+/gi, '[REDACTED]')
-  .replace(/\b(?:password|passwd|secret|token|api[_-]?key|authorization|credential|client[_-]?secret)["']?\s*[:=]\s*(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s,;]+)/gi, '[REDACTED]');
+  .replace(/\b([A-Za-z][A-Za-z0-9_.-]*)["']?\s*[:=]\s*(?:"[^"\r\n]*"|'[^'\r\n]*'|[^\s,;]+)/g, (match, label: string) => sensitiveKey.test(label) ? '[REDACTED]' : match);
 }
-const sensitiveKey = /(?:password|passwd|secret|token|credential|authorization|api[-_]?key|private[-_]?key|raw[-_]?logs?|^env$|environment[-_]?variables|stdout|stderr)/i;
+const sensitiveKey = /(?:password|passwd|secret|token|credential|authorization|api[-_]?key|access[-_]?key|connection[-_]?string|private[-_]?key|raw[-_]?logs?|^env$|environment[-_]?variables|stdout|stderr)/i;
 export function redact<T>(value: T): T {
  assertBounded(value);
  function walk(v: unknown): unknown {
