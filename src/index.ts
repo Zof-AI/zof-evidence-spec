@@ -6,6 +6,7 @@ import { redact } from './redact.js';
 import type { Evidence, EvidenceInput, ValidationResult } from './types.js';
 export * from './types.js';
 export * from './safety.js';
+export { safeWriteFiles, safeAppendFile, safeListDirectory, safeGit, runTrustedCommand, type SafeDirectoryEntry } from './filesystem.js';
 export * from './redact.js';
 export { evidenceSchema } from './schema.js';
 const ajv = new Ajv2020({ strict: true, allErrors: false, ownProperties: true, validateFormats: false });

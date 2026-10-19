@@ -1,5 +1,4 @@
-import { constants } from 'node:fs';
-import { lstat, open, realpath } from 'node:fs/promises';
+import { anchoredReadFile } from './filesystem.js';
 import path from 'node:path';
 export const MAX_INPUT_BYTES = 4 * 1024 * 1024;
 export class SafeInputError extends Error {
@@ -45,37 +44,9 @@ export function parseJson(text: string, maxBytes = MAX_INPUT_BYTES): unknown {
 export function assertSafeRelativePath(value: string): void {
  if (typeof value !== 'string' || !value || value.length > 1024 || /[\\\x00-\x1f\x7f:%?#]/.test(value) || path.isAbsolute(value) || value.split('/').some(p => !p || p === '.' || p === '..')) fail('UNSAFE_PATH', 'Path must be a safe relative file path.');
 }
-/** Reject every symlink component, including links that currently resolve inside root. */
+/** Descriptor-relative read; rejects symlinks, hard links and special files. */
 export async function safeReadFile(root: string, relativePath: string, maxBytes = MAX_INPUT_BYTES): Promise<Buffer> {
- checkLimit(maxBytes); assertSafeRelativePath(relativePath);
- let handle;
- try {
-  const base = await realpath(root);
-  let current = base;
-  for (const segment of relativePath.split('/')) {
-   current = path.join(current, segment);
-   if ((await lstat(current)).isSymbolicLink()) fail('SYMLINK', 'Symbolic links are not accepted.');
-  }
-  const resolved = await realpath(current);
-  if (resolved !== current || !resolved.startsWith(base + path.sep)) fail('UNSAFE_PATH', 'Path is outside the permitted root.');
-  handle = await open(current, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
-  const stat = await handle.stat();
-  if (!stat.isFile()) fail('FILE_TYPE', 'Input must be a regular file.');
-  if (stat.size > maxBytes) fail('SIZE', 'Input exceeds maximum size.');
-  // A second path check narrows directory replacement races. Callers must use a stable root.
-  if (await realpath(current) !== resolved) fail('UNSAFE_PATH', 'Input path changed during reading.');
-  const buffer = Buffer.alloc(maxBytes + 1);
-  let offset = 0;
-  while (offset < buffer.length) {
-   const { bytesRead } = await handle.read(buffer, offset, buffer.length - offset, null);
-   if (!bytesRead) break; offset += bytesRead;
-  }
-  if (offset > maxBytes) fail('SIZE', 'Input exceeds maximum size.');
-  return buffer.subarray(0, offset);
- } catch (error) {
-  if (error instanceof SafeInputError) throw error;
-  throw new SafeInputError('FILE_READ', 'Unable to read permitted input file.');
- } finally { await handle?.close(); }
+ return anchoredReadFile(root, relativePath, maxBytes);
 }
 export async function safeReadJson(root: string, relativePath: string, maxBytes = MAX_INPUT_BYTES): Promise<unknown> {
  return parseJson((await safeReadFile(root, relativePath, maxBytes)).toString('utf8'), maxBytes);
