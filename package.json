@@ -22,7 +22,9 @@
     "CHANGELOG.md",
     "docs",
     "examples",
-    "schemas"
+    "schemas",
+    "SECURITY.md",
+    "CONTRIBUTING.md"
   ],
   "engines": {
     "node": ">=22"
